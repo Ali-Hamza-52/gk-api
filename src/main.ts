@@ -3,7 +3,6 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { JwtAuthGuard } from './auth/jwt-auth.guard';
-import { ThrottlerGuard } from '@nestjs/throttler';
 import { UserThrottlerGuard } from './common/guards/user-throttler.guard';
 import * as dotenv from 'dotenv';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -11,14 +10,12 @@ import { join } from 'path';
 import 'module-alias/register';
 import { SwaggerTransformPipe } from './common/pipes/swagger-transform.pipe';
 import { SequelizeExceptionFilter } from './filters/sequelize-exception.filter';
-import { ResponseInterceptor } from './common/interceptors/response.interceptor';
-import { RequestLogInterceptor } from './common/interceptors/request-log.interceptor';
 
 async function bootstrap() {
   // Load environment variables from .env
-dotenv.config({
-  path: `.env.${process.env.NODE_ENV || 'local'}`,
-});
+  dotenv.config({
+    path: `.env.${process.env.NODE_ENV || 'local'}`,
+  });
 
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
   app.set('trust proxy', 1); // <-- VERY IMPORTANT
@@ -46,6 +43,22 @@ dotenv.config({
   app.useGlobalFilters(new SequelizeExceptionFilter());
   // app.useGlobalInterceptors(new ResponseInterceptor());
 
+  app.use('/docs', (req, res, next) => {
+    const auth = { login: 'dev', password: 'glorek' }; // <- set your credentials here
+
+    const b64auth = (req.headers.authorization || '').split(' ')[1] || '';
+    const [login, password] = Buffer.from(b64auth, 'base64')
+      .toString()
+      .split(':');
+
+    if (login === auth.login && password === auth.password) {
+      return next();
+    }
+
+    res.set('WWW-Authenticate', 'Basic realm="Restricted Area"');
+    res.status(401).send('Authentication required.');
+  });
+
   // Swagger setup
   const config = new DocumentBuilder()
     .setTitle('Glorek API')
@@ -60,9 +73,13 @@ dotenv.config({
     })
     .build();
   const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api-docs', app, document, {
+  SwaggerModule.setup('docs', app, document, {
     swaggerOptions: {
       persistAuthorization: true,
+      docExpansion: 'none',
+      defaultModelsExpandDepth: -1,
+      tagsSorter: 'alpha',
+      operationsSorter: 'alpha',
     },
   });
 

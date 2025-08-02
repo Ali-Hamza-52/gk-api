@@ -2,129 +2,169 @@ import {
   Table,
   Column,
   Model,
-  DataType,
   PrimaryKey,
+  DataType,
   AutoIncrement,
-  Default,
-  ForeignKey,
+  CreatedAt,
+  UpdatedAt,
   BelongsTo,
+  ForeignKey,
+  HasMany,
 } from 'sequelize-typescript';
-import { ApiProperty } from '@nestjs/swagger';
 import { ClientEntity } from '@/sales/clients/client.entity';
 import { ClientLocationEntity } from '@/sales/clients/client-location.entity';
 import { User } from '@/users/user.entity';
+import { WorkOrderService } from '@/work-orders/work-order-services/entities/work-order-service.entity';
 
 export enum WorkOrderStatus {
-  REQUESTED = 'REQUESTED',
-  DIAGNOSED = 'DIAGNOSED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  COMPLETED = 'COMPLETED',
-  CANCELLED = 'CANCELLED',
-  REWORK = 'REWORK',
-  WARRANTY = 'WARRANTY',
+  Requested = 'Requested',
+  Diagnosed = 'Diagnosed',
+  InProgress = 'In-Progress',
+  Completed = 'Completed',
+  Rejected = 'Rejected',
+  Rework = 'Rework',
+  Warranty = 'Warranty',
 }
 
 export enum WorkOrderPriority {
-  CRITICAL = 1,
-  HIGH = 2,
-  MEDIUM = 3,
-  LOW = 4,
-  ROUTINE = 5,
+  Critical = 1,
+  High = 2,
+  Medium = 3,
+  Low = 4,
+  Routine = 5,
+}
+
+export enum RequestType {
+  Open = 0,
+  ServiceTask = 1,
 }
 
 @Table({ tableName: 'work_orders', timestamps: true })
-export class WorkOrderEntity extends Model<WorkOrderEntity> {
-  @ApiProperty({ example: 1, description: 'Auto-generated ID' })
+export class WorkOrder extends Model<WorkOrder> {
   @PrimaryKey
   @AutoIncrement
-  @Column(DataType.BIGINT)
+  @Column
   declare id: number;
 
-  @ApiProperty({ example: 'WO-2025-0001' })
-  @Column({ type: DataType.STRING(100), allowNull: true })
-  declare work_order_code?: string;
+  @Column({ allowNull: false, type: DataType.STRING(100) })
+  declare work_order_code: string;
 
-  @ApiProperty({ example: 1054 })
   @ForeignKey(() => ClientEntity)
-  @Column(DataType.BIGINT)
+  @Column({ allowNull: false })
   declare client_id: number;
 
-  @BelongsTo(() => ClientEntity)
-  declare client: ClientEntity;
-
-  @ApiProperty({ example: 442 })
   @ForeignKey(() => ClientLocationEntity)
-  @Column(DataType.BIGINT)
+  @Column({ allowNull: false })
   declare location_id: number;
 
-  @BelongsTo(() => ClientLocationEntity)
-  declare location: ClientLocationEntity;
-
-  @ApiProperty({ example: 0, description: '0 = Open, 1 = Service Task' })
-  @Column(DataType.INTEGER)
-  declare request_type: number;
-
-  @ApiProperty({ example: 0, description: 'This is ForeignKey key' })
-  @Column(DataType.INTEGER)
+  @Column({ allowNull: true })
   declare contract_id: number;
 
-  @ApiProperty({ enum: WorkOrderPriority })
-  @Column(DataType.INTEGER)
+  @Column({
+    type: DataType.TINYINT,
+    allowNull: false,
+    defaultValue: RequestType.Open,
+  })
+  declare request_type: RequestType;
+
+  @Column({
+    type: DataType.STRING(50),
+    allowNull: false,
+    defaultValue: WorkOrderPriority.Medium,
+  })
   declare priority: WorkOrderPriority;
 
-  @ApiProperty({ example: 'Salman Arif' })
-  @Column(DataType.STRING(100))
+  @Column({ type: DataType.STRING(100), allowNull: true })
   declare contact_person: string;
 
-  @ApiProperty({ example: '+966501234567' })
-  @Column(DataType.STRING(50))
+  @Column({ type: DataType.STRING(50), allowNull: true })
   declare contact_number: string;
 
-  @ApiProperty({ example: 15 })
+  @Column({ type: DataType.NUMBER, allowNull: false, defaultValue: 0 })
+  declare work_order_value: number;
+
   @ForeignKey(() => User)
-  @Column(DataType.BIGINT)
+  @Column({ allowNull: false })
   declare requested_by: number;
+
+  @Column({
+    type: DataType.ENUM(...Object.values(WorkOrderStatus)),
+    allowNull: true,
+    defaultValue: WorkOrderStatus.Requested,
+  })
+  declare status: WorkOrderStatus;
+
+  @ForeignKey(() => User)
+  @Column({ allowNull: true })
+  declare assigned_technician: number;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare diagnosis_timestamp: Date;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare scheduled_timestamp: Date;
+
+  @Column({ type: DataType.DATE, allowNull: false })
+  declare scheduled_date: Date;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare sla_due_at: Date;
+
+  @Column({ type: DataType.DATE, allowNull: true })
+  declare completed_at: Date;
+
+  @Column({ type: DataType.TINYINT, allowNull: true })
+  declare feedback_rating: number;
+
+  @Column({ type: DataType.TEXT, allowNull: true })
+  declare feedback_comments: string;
+
+  @Column({ type: DataType.BOOLEAN, defaultValue: false, allowNull: true })
+  declare reopened_as_warranty: boolean;
+
+  @ForeignKey(() => User)
+  @Column({ allowNull: true })
+  declare created_by: number;
+
+  @ForeignKey(() => User)
+  @Column({ allowNull: true })
+  declare updated_by: number;
+
+  // NEW FIELD: Notes (Only addition)
+  @Column({ type: DataType.TEXT, allowNull: true })
+  declare notes: string;
+
+  @CreatedAt
+  @Column({ allowNull: true })
+  declare created_at: Date;
+
+  @UpdatedAt
+  @Column({ allowNull: true })
+  declare updated_at: Date;
+
+  // Associations
+  @BelongsTo(() => ClientEntity, 'client_id')
+  declare client: ClientEntity;
+
+  @BelongsTo(() => ClientLocationEntity, 'location_id')
+  declare clientLocation: ClientLocationEntity;
 
   @BelongsTo(() => User, 'requested_by')
   declare requester: User;
 
-  @ApiProperty({ enum: WorkOrderStatus })
-  @Column({
-    type: DataType.ENUM(...Object.values(WorkOrderStatus)),
-    defaultValue: WorkOrderStatus.REQUESTED,
-  })
-  declare status: WorkOrderStatus;
-
-  @ApiProperty({ example: 25 })
-  @ForeignKey(() => User)
-  @Column({ type: DataType.BIGINT, allowNull: true })
-  declare assigned_technician?: number;
-
   @BelongsTo(() => User, 'assigned_technician')
-  declare technician?: User;
+  declare technician: User;
 
-  @ApiProperty({ example: '2025-07-14T11:00:00Z' })
-  @Column({ type: DataType.DATE, allowNull: true })
-  declare diagnosis_timestamp?: Date;
+  @BelongsTo(() => User, 'created_by')
+  declare creator: User;
 
-  @ApiProperty({ example: '2025-07-14T17:00:00Z' })
-  @Column(DataType.DATE)
-  declare sla_due_at: Date;
+  @BelongsTo(() => User, 'updated_by')
+  declare updater: User;
 
-  @ApiProperty({ example: '2025-07-14T15:00:00Z' })
-  @Column({ type: DataType.DATE, allowNull: true })
-  declare completed_at?: Date;
-
-  @ApiProperty({ example: 4 })
-  @Column({ type: DataType.INTEGER, allowNull: true })
-  declare feedback_rating?: number;
-
-  @ApiProperty({ example: 'Technicians were responsive.' })
-  @Column({ type: DataType.STRING, allowNull: true })
-  declare feedback_comments?: string;
-
-  @ApiProperty({ example: false })
-  @Default(false)
-  @Column(DataType.BOOLEAN)
-  declare reopened_as_warranty?: boolean;
+  // One-to-Many relationship with WorkOrderService (CASCADE DELETE)
+  @HasMany(() => WorkOrderService, {
+    foreignKey: 'work_order_id',
+    onDelete: 'CASCADE',
+  })
+  declare workOrderServices: WorkOrderService[];
 }

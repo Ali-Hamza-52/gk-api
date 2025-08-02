@@ -20,7 +20,7 @@ import {
   ApiBody,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
@@ -44,7 +44,7 @@ export class AssetController {
   @Post()
   @PermissionCheck('assets_managments', 'C')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'asset', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Create a new asset' })
@@ -102,7 +102,7 @@ export class AssetController {
   @Put(':id')
   @PermissionCheck('assets_managments', 'E')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'asset', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Update an existing asset' })

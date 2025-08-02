@@ -21,7 +21,7 @@ import {
   ApiQuery,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
@@ -45,7 +45,7 @@ export class EmployeeController {
   @Post()
   @PermissionCheck('employees', 'C')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'employee', recordIdKey: 'emp_id' })
   @ApiOperation({ summary: 'Create new employee' })
@@ -128,7 +128,7 @@ export class EmployeeController {
   @Put(':id')
   @PermissionCheck('employees', 'E')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'employee', recordIdKey: 'emp_id' })
   @ApiConsumes('multipart/form-data')

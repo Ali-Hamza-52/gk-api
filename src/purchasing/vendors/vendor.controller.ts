@@ -12,7 +12,7 @@ import {
   UseGuards,
   Req,
 } from '@nestjs/common';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import {
   ApiBearerAuth,
   ApiTags,
@@ -80,7 +80,7 @@ export class VendorController {
   @Post()
   @PermissionCheck('vendor', 'C')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(RequestLogInterceptor)
   @RequestLog({ module: 'vendor', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Add vendor' })
@@ -114,7 +114,7 @@ export class VendorController {
   @Put(':id')
   @PermissionCheck('vendor', 'E')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(RequestLogInterceptor)
   @RequestLog({ module: 'vendor', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Update vendor' })

@@ -23,7 +23,7 @@ import {
   ApiParam,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { ClientService } from './client.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -93,7 +93,7 @@ export class ClientController {
   @Post()
   @PermissionCheck('client', 'C')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'clients', recordIdKey: 'client_code' })
   @ApiOperation({ summary: 'Create a client' })

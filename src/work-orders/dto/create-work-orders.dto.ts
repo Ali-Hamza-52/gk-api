@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsNumber,
   IsString,
@@ -6,145 +6,277 @@ import {
   IsEnum,
   IsOptional,
   IsDateString,
+  IsArray,
   Length,
   Min,
   Max,
+  Matches,
+  IsNotEmpty,
+  IsIn,
+  IsInt,
+  IsPositive,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  Validate,
 } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import {
   WorkOrderStatus,
   WorkOrderPriority,
+  RequestType,
 } from '../entities/work-orders.entity';
+
+@ValidatorConstraint({ name: 'ServicesArrayValidation', async: false })
+export class ServicesArrayValidation implements ValidatorConstraintInterface {
+  warningMessage = '';
+  validate(services: number[] | undefined, args: any) {
+    const object = args.object as CreateWorkOrderDto;
+    // If request_type is Open (0) and services array is provided, return false (invalid)
+    if (object.request_type === RequestType.Open && services !== undefined) {
+      this.warningMessage =
+        'Services array should not be provided when request_type is Open (0).';
+      return false;
+    }
+
+    // If request_type is ServiceTask (1) and no services provided, return false (invalid)
+    if (
+      object.request_type === RequestType.ServiceTask &&
+      (!services || services.length === 0)
+    ) {
+      this.warningMessage =
+        'At least one service must be provided when request_type is ServiceTask (1).';
+      return false;
+    }
+
+    return true;
+  }
+
+  defaultMessage() {
+    return this.warningMessage;
+  }
+}
 
 export class CreateWorkOrderDto {
   @ApiProperty({
-    example: 'WO-2025-0001',
-    description: 'Work Order Code',
-    required: false,
+    description: 'Client ID (Required)',
+    required: true,
   })
-  @IsOptional()
-  @IsString()
-  @Length(1, 100)
-  work_order_code?: string;
-
-  @ApiProperty({ example: 1054, description: 'Client ID' })
-  @IsNumber()
+  @IsNumber({}, { message: 'Client ID must be a number' })
+  @IsInt({ message: 'Client ID must be an integer' })
+  @IsPositive({ message: 'Client ID must be positive' })
+  @IsNotEmpty({ message: 'Client ID is required' })
   client_id: number;
 
-  @ApiProperty({ example: 442, description: 'Client Location ID' })
-  @IsNumber()
+  @ApiProperty({
+    description: 'Client Location ID (Required)',
+    required: true,
+  })
+  @IsNumber({}, { message: 'Location ID must be a number' })
+  @IsInt({ message: 'Location ID must be an integer' })
+  @IsPositive({ message: 'Location ID must be positive' })
+  @IsNotEmpty({ message: 'Location ID is required' })
   location_id: number;
 
   @ApiProperty({
-    example: 0,
-    description: 'Request Type: 0 = Open, 1 = Service Task',
+    type: 'number',
+    enum: [0, 1],
+    description: '0 = Open (Diagnostic), 1 = Service Task (Required)',
+    required: true,
   })
-  @IsNumber()
-  request_type: number;
+  @Transform(({ value }) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    return Number(value);
+  })
+  @IsNotEmpty({ message: 'Request type is required' })
+  @IsIn([0, 1], {
+    message: 'Request type must be one of the following values: 0, 1',
+  })
+  request_type: RequestType;
 
-  @ApiProperty({ example: 442, description: 'Contract ID' })
+  @ApiPropertyOptional({
+    description: 'Contract ID (Optional - not a foreign key constraint)',
+    required: false,
+  })
   @IsOptional()
-  @IsNumber()
+  @IsNumber({}, { message: 'Contract ID must be a number' })
+  @IsInt({ message: 'Contract ID must be an integer' })
+  @IsPositive({ message: 'Contract ID must be positive' })
   contract_id?: number;
 
-  @ApiProperty({
-    enum: WorkOrderPriority,
-    example: WorkOrderPriority.CRITICAL,
+  @ApiPropertyOptional({
+    type: 'number',
+    enum: [1, 2, 3, 4, 5],
     description: '1-Critical, 2-High, 3-Medium, 4-Low, 5-Routine',
+    required: false,
   })
-  @IsEnum(WorkOrderPriority)
-  priority: WorkOrderPriority;
+  @Transform(({ value }) => {
+    if (value === null || value === undefined || value === '') return undefined;
+    return Number(value);
+  })
+  @IsIn([1, 2, 3, 4, 5], {
+    message: 'Priority must be one of the following values: 1, 2, 3, 4, 5',
+  })
+  priority?: WorkOrderPriority;
 
-  @ApiProperty({ example: 'Salman Arif', description: 'Contact Person Name' })
-  @IsString()
-  @Length(1, 100)
-  contact_person: string;
+  @ApiPropertyOptional({
+    description: 'Contact Person Name',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Contact person must be a string' })
+  @Length(1, 100, {
+    message: 'Contact person must be between 1 and 100 characters',
+  })
+  contact_person?: string;
 
-  @ApiProperty({
-    example: '+966501234567',
+  @ApiPropertyOptional({
     description: 'Contact Phone Number',
+    required: false,
   })
-  @IsString()
-  @Length(1, 50)
-  contact_number: string;
-
-  @ApiProperty({
-    example: 15,
-    description: 'User ID who requested the work order',
+  @IsOptional()
+  @IsString({ message: 'Contact number must be a string' })
+  @Matches(/^\+[1-9]\d{8,14}$/, {
+    message:
+      'Phone number must be in international format (+country code + number)',
   })
-  @IsNumber()
-  requested_by: number;
+  @Length(1, 50, {
+    message: 'Contact number must be between 1 and 50 characters',
+  })
+  contact_number?: string;
 
-  @ApiProperty({
-    enum: WorkOrderStatus,
-    example: WorkOrderStatus.REQUESTED,
+  @ApiPropertyOptional({
+    description:
+      'User ID who requested the work order (Auto-set to current user if not provided)',
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber({}, { message: 'Requested by must be a number' })
+  @IsInt({ message: 'Requested by must be an integer' })
+  @IsPositive({ message: 'Requested by must be positive' })
+  requested_by?: number;
+
+  @ApiPropertyOptional({
+    type: 'string',
+    enum: Object.values(WorkOrderStatus),
     description: 'Current status of the work order',
     required: false,
   })
-  @IsEnum(WorkOrderStatus)
+  @IsOptional()
+  @IsEnum(WorkOrderStatus, {
+    message: `Status must be one of the following values: ${Object.values(WorkOrderStatus).join(', ')}`,
+  })
   status?: WorkOrderStatus;
 
-  @ApiProperty({
-    example: 25,
+  @ApiPropertyOptional({
     description: 'Assigned Technician User ID',
     required: false,
   })
-  @IsNumber()
+  @IsOptional()
+  @IsNumber({}, { message: 'Assigned technician must be a number' })
+  @IsInt({ message: 'Assigned technician must be an integer' })
+  @IsPositive({ message: 'Assigned technician must be positive' })
   assigned_technician?: number;
 
-  @ApiProperty({
-    example: '2025-07-14T11:00:00Z',
+  @ApiPropertyOptional({
     description: 'Diagnosis timestamp',
     required: false,
   })
   @IsOptional()
-  @IsDateString()
+  @IsDateString(
+    {},
+    { message: 'Diagnosis timestamp must be a valid date string' },
+  )
   diagnosis_timestamp?: string;
 
-  @ApiProperty({
-    example: '2025-07-14T17:00:00Z',
-    description: 'SLA deadline timestamp',
+  @ApiPropertyOptional({
+    description: 'Scheduled Date/Time',
+    required: false,
   })
   @IsOptional()
-  @IsDateString()
-  sla_due_at?: string;
+  @IsDateString(
+    {},
+    { message: 'Scheduled timestamp must be a valid date string' },
+  )
+  scheduled_timestamp?: string;
 
   @ApiProperty({
-    example: '2025-07-14T15:00:00Z',
+    description: 'Scheduled Date',
+    required: true,
+  })
+  @IsNotEmpty({ message: 'Scheduled date is required' })
+  @IsDateString({}, { message: 'Scheduled date must be a valid date string' })
+  scheduled_date: string;
+
+  @ApiPropertyOptional({
+    description: 'SLA deadline timestamp',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString(
+    {},
+    { message: 'SLA due timestamp must be a valid date string' },
+  )
+  sla_due_at?: string;
+
+  @ApiPropertyOptional({
     description: 'Completion timestamp',
     required: false,
   })
   @IsOptional()
-  @IsDateString()
+  @IsDateString(
+    {},
+    { message: 'Completed timestamp must be a valid date string' },
+  )
   completed_at?: string;
 
-  @ApiProperty({
-    example: 4,
+  @ApiPropertyOptional({
     description: 'Feedback rating (1-5)',
     minimum: 1,
     maximum: 5,
     required: false,
   })
   @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(5)
+  @IsNumber({}, { message: 'Feedback rating must be a number' })
+  @IsInt({ message: 'Feedback rating must be an integer' })
+  @Min(1, { message: 'Feedback rating must be at least 1' })
+  @Max(5, { message: 'Feedback rating must be at most 5' })
   feedback_rating?: number;
 
-  @ApiProperty({
-    example: 'Technicians were responsive.',
+  @ApiPropertyOptional({
     description: 'Feedback comments',
     required: false,
   })
   @IsOptional()
-  @IsString()
+  @IsString({ message: 'Feedback comments must be a string' })
   feedback_comments?: string;
 
-  @ApiProperty({
-    example: false,
+  @ApiPropertyOptional({
     description: 'Whether this work order was reopened as warranty',
     required: false,
   })
   @IsOptional()
-  @IsBoolean()
+  @IsBoolean({ message: 'Reopened as warranty must be a boolean' })
   reopened_as_warranty?: boolean;
+
+  @ApiPropertyOptional({
+    description: 'Internal notes for the work order',
+    required: false,
+  })
+  @IsOptional()
+  @IsString({ message: 'Notes must be a string' })
+  notes?: string;
+
+  @ApiPropertyOptional({
+    type: [Number],
+    description:
+      'Array of service IDs (Required when request_type = 1, not allowed when request_type = 0)',
+    required: false,
+  })
+  @IsOptional()
+  @Validate(ServicesArrayValidation)
+  @IsArray({ message: 'Services must be an array' })
+  @Type(() => Number)
+  @IsInt({ each: true, message: 'Each service ID must be an integer' })
+  @IsPositive({ each: true, message: 'Each service ID must be positive' })
+  services?: number[];
 }

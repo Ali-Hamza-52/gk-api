@@ -24,7 +24,7 @@ import {
   ApiQuery,
   ApiOkResponse,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { AccommodationService } from './accommodation.service';
 import { CreateAccommodationDto } from './dto/create-accommodation.dto';
 import { UpdateAccommodationDto } from './dto/update-accommodation.dto';
@@ -86,7 +86,7 @@ export class AccommodationController {
   @Post()
   @PermissionCheck('accommodation', 'C')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'accommodation', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Create a new accommodation' })
@@ -124,7 +124,7 @@ export class AccommodationController {
   @Put(':id')
   @PermissionCheck('accommodation', 'E')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'accommodation', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Update accommodation' })

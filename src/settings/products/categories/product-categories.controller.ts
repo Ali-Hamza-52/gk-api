@@ -20,7 +20,7 @@ import {
   ApiConsumes,
   ApiBody,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { AnyFilesInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { ProductCategoriesService } from './product-categories.service';
@@ -44,7 +44,7 @@ export class ProductCategoriesController {
   @Post()
   @PermissionCheck('settings', 'C')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(FileInterceptor('icon'), RequestLogInterceptor)
   @RequestLog({ module: 'settings', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Add a category' })
@@ -85,7 +85,7 @@ export class ProductCategoriesController {
   @Put(':id')
   @PermissionCheck('settings', 'E')
   @UseGuards(PermissionGuard, UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @ApiOperation({ summary: 'Update category' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UpdateProductCategoryDto })

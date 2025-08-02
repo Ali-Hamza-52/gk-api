@@ -22,7 +22,7 @@ import {
   ApiBody,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { AuthenticatedRequest } from 'src/common/types/authenticated-request';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
@@ -42,7 +42,7 @@ export class AccommodationPaymentController {
 
   @Post()
   @UseGuards(UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'accommodation_payment', recordIdKey: 'id' })
   @ApiConsumes('multipart/form-data')
@@ -73,7 +73,7 @@ export class AccommodationPaymentController {
 
   @Put(':id')
   @UseGuards(UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'accommodation_payment', recordIdKey: 'id' })
   @ApiConsumes('multipart/form-data')

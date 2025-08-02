@@ -51,6 +51,7 @@ import { ProfessionService } from './profession/profession.service';
 import { WarehouseEntity } from './warehouse/entities/warehouse.entity';
 import { WarehouseController } from './warehouse/warehouse.controller';
 import { WarehouseService } from './warehouse/warehouse.service';
+import { ClientPricingRulesModule } from './client-pricing-rules/client-pricing-rules.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { WarehouseService } from './warehouse/warehouse.service';
       ProfessionEntity,
       WarehouseEntity,
     ]),
+    ClientPricingRulesModule,
   ],
   controllers: [
     AssetTypeController,

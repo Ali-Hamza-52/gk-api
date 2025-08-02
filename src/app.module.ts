@@ -21,10 +21,10 @@ import { EmployeeModule } from './employees/employee.module';
 import { SupplierModule } from './purchasing/suppliers/supplier.module';
 import { SettingsModule } from './settings/settings.module';
 import { AssetModule } from './assets/asset.module';
+import { WorkOrdersModule } from './work-orders/work-orders.module';
 import { CommonModule } from './common/common.module';
 import { FileController } from './common/controllers/file.controller';
 import { config } from 'dotenv';
-import { WorkOrdersModule } from './work-orders/work-orders.module';
 config(); // loads .env before app starts
 @Module({
   imports: [
@@ -44,7 +44,7 @@ config(); // loads .env before app starts
             limit: 100, // 100 requests per minute per user (general API)
           },
         ],
-        storage: new RedisThrottlerStorageService(configService),
+        // storage: new RedisThrottlerStorageService(configService),
       }),
     }),
     SequelizeModule.forRoot(sequelizeConfig),

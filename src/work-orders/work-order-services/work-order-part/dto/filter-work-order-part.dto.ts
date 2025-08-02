@@ -1,4 +1,4 @@
-// src/work-orders/dto/filter-work-orders.dto.ts
+// src/work-orders/work-order-parts/dto/filter-work-order-part.dto.ts
 
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
@@ -10,8 +10,10 @@ import {
   IsPositive,
   Min,
   Max,
+  IsBoolean,
 } from 'class-validator';
-export class FilterWorkOrderDto {
+
+export class FilterWorkOrderPartDto {
   @ApiPropertyOptional({
     description: 'Page number for pagination',
     minimum: 1,
@@ -38,14 +40,14 @@ export class FilterWorkOrderDto {
 
   @ApiPropertyOptional({
     description:
-      'Search term - searches across Work Order Code, Client Location, Client Name',
+      'Search term - searches across Part ID, Work Order ID, Work Order Service ID, Material Name',
   })
   @IsOptional()
   @IsString({ message: 'Search term must be a string' })
   searchTerm?: string;
 
   @ApiPropertyOptional({
-    description: 'Filter by Work Order ID',
+    description: 'Filter by Work Order Part ID',
   })
   @IsOptional()
   @Type(() => Number)
@@ -55,29 +57,30 @@ export class FilterWorkOrderDto {
   id?: number;
 
   @ApiPropertyOptional({
-    description: 'Filter by Work Order Code',
-  })
-  @IsOptional()
-  @IsString({ message: 'Work order code must be a string' })
-  work_order_code?: string;
-
-  @ApiPropertyOptional({
-    description: 'Filter by Client ID',
+    description: 'Filter by Work Order ID',
   })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: 'Client ID must be a number' })
-  @IsInt({ message: 'Client ID must be an integer' })
-  @IsPositive({ message: 'Client ID must be positive' })
-  client_id?: number;
+  @IsNumber({}, { message: 'Work order ID must be a number' })
+  @IsInt({ message: 'Work order ID must be an integer' })
+  @IsPositive({ message: 'Work order ID must be positive' })
+  work_order_id?: number;
 
   @ApiPropertyOptional({
-    description: 'Filter by Location ID',
+    description: 'Filter by Work Order Service ID',
   })
   @IsOptional()
   @Type(() => Number)
-  @IsNumber({}, { message: 'Location ID must be a number' })
-  @IsInt({ message: 'Location ID must be an integer' })
-  @IsPositive({ message: 'Location ID must be positive' })
-  location_id?: number;
+  @IsNumber({}, { message: 'Work order service ID must be a number' })
+  @IsInt({ message: 'Work order service ID must be an integer' })
+  @IsPositive({ message: 'Work order service ID must be positive' })
+  work_order_service_id?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter by client approval status',
+  })
+  @IsOptional()
+  @Type(() => Boolean)
+  @IsBoolean({ message: 'Approved by client must be a boolean' })
+  approved_by_client?: boolean;
 }

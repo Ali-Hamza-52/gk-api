@@ -24,7 +24,7 @@ import {
   ApiParam,
   ApiQuery,
 } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
+import { SkipThrottle, Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { UserThrottlerGuard } from 'src/common/guards/user-throttler.guard';
@@ -44,7 +44,7 @@ export class AccommodationBillPaymentController {
 
   @Post()
   @UseGuards(UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'accommodation_bill_payment', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Create a new accommodation bill payment' })
@@ -101,7 +101,7 @@ export class AccommodationBillPaymentController {
 
   @Put(':id')
   @UseGuards(UserThrottlerGuard)
-  @Throttle({ default: { limit: 30, ttl: 3600000 } })
+  @SkipThrottle()
   @UseInterceptors(AnyFilesInterceptor(), RequestLogInterceptor)
   @RequestLog({ module: 'accommodation_bill_payment', recordIdKey: 'id' })
   @ApiOperation({ summary: 'Update an accommodation bill payment' })
